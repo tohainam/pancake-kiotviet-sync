@@ -21,6 +21,8 @@ export class WebhooksService {
         `Processing Pancake order webhook for order ID: ${order.id} with status: ${order.status}`,
       );
 
+      // console.log(order);
+
       // status 0 (mới)
       // status 6 (đã hủy)
       // status 7 (đơn bị xóa)
@@ -55,13 +57,10 @@ export class WebhooksService {
       this.logger.log(
         `Successfully processing Pancake order ID: ${order.id} with status: ${order.status}`,
       );
-    } catch (error) {
+    } catch {
       this.logger.error(
-        `Error processing Pancake order ID ${order.id} with status: ${order.status} webhook: ${error.message}`,
-        error.stack,
+        `Error processing Pancake order ID ${order.id} with status: ${order.status} webhook`,
       );
-    } finally {
-      return true;
     }
   }
 }

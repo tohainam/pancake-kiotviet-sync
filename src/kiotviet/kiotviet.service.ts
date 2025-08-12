@@ -3,7 +3,8 @@ import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Cache } from 'cache-manager';
-import { catchError, delay, firstValueFrom, map, of, tap } from 'rxjs';
+import { catchError, delay, firstValueFrom, map, of } from 'rxjs';
+import { PAGE_MAP, USER_FULLNAME_MAP } from 'src/common';
 import { PancakeOrder } from 'src/types';
 
 const access_token_cache_key = 'kiotviet_access_token';
@@ -28,6 +29,8 @@ export class KiotvietService {
       | 'total_price'
       | 'partner'
       | 'shipping_address'
+      | 'creator'
+      | 'page_id'
     >,
   ) {
     try {
@@ -56,7 +59,10 @@ export class KiotvietService {
         totalPayment: 0,
         saleChannelId: 1000015850, // Kênh facebook for kiotviet
         usingCod: true,
-        soldById: 1000029677, // admin
+        soldById:
+          data?.page_id && PAGE_MAP[data.page_id]
+            ? Number(PAGE_MAP[data.page_id])
+            : 1000029677, // admin
         status: 3, // Đang xử lý
         invoiceDetails: data.items.map((item) => {
           return {
@@ -126,8 +132,9 @@ export class KiotvietService {
           // RecipientPaymentFee: 0,
           // TotalRecipientPayment: 0,
         },
-        description: `Đơn hàng tự động tạo từ đơn Pancake with ID ${data.id}`,
+        description: `Đơn hàng tự động tạo từ đơn Pancake with ID ${data.id}.${USER_FULLNAME_MAP[data.creator.fb_id] ? ` Tạo bởi ${USER_FULLNAME_MAP[data.creator.fb_id]}` : ''}`,
       };
+      // console.log(invoice);
 
       const RETAILER_NAME =
         this.configService.getOrThrow<string>('RETAILER_NAME');
@@ -149,15 +156,24 @@ export class KiotvietService {
             },
           })
           .pipe(
-            tap(async (response) => {
+            map(async (response) => {
               await this.cacheManager.set(
                 'pancake_order_' + data.id,
-                response.data.id.toString(),
+                (response.data as { id: string | number }).id.toString(),
                 604800000,
               );
+              return response;
             }),
             catchError((error: any) => {
-              console.error('Error:', error?.response?.data?.responseStatus);
+              if (error && typeof error === 'object' && 'response' in error) {
+                console.error(
+                  'Error:',
+                  (error as { response?: { data?: { responseStatus?: any } } })
+                    .response?.data?.responseStatus,
+                );
+              } else {
+                console.error('Error:', error);
+              }
               throw new Error('Failed to create invoice');
             }),
           ),
@@ -166,12 +182,12 @@ export class KiotvietService {
       this.logger.log(
         `Created invoice for Pancake order ID: ${data.id} with status: ${data.status} with data: ${JSON.stringify(data)}`,
       );
-    } catch (error) {
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       this.logger.error(
-        `Error creating invoice for Pancake order ID: ${data.id} with status: ${data.status} with data: ${JSON.stringify(data)} with error: ${error.message}`,
+        `Error creating invoice for Pancake order ID: ${data.id} with status: ${data.status} with data: ${JSON.stringify(data)} with error: ${errorMessage}`,
       );
-    } finally {
-      return true;
     }
   }
 
@@ -186,6 +202,8 @@ export class KiotvietService {
       | 'total_price'
       | 'partner'
       | 'shipping_address'
+      // | 'creator'
+      | 'page_id'
     >,
   ) {
     try {
@@ -194,9 +212,14 @@ export class KiotvietService {
       );
 
       const invoice: {
+        soldById: number;
         invoiceDetails: any[];
         deliveryDetail: any;
       } = {
+        soldById:
+          data?.page_id && PAGE_MAP[data.page_id]
+            ? Number(PAGE_MAP[data.page_id])
+            : 1000029677, // admin
         invoiceDetails: data.items.map((item) => {
           return {
             productCode: item.variation_info.product_display_id,
@@ -287,25 +310,34 @@ export class KiotvietService {
             },
           })
           .pipe(
-            tap(async (response) => {
+            map(async (response) => {
               await this.cacheManager.set(
                 'pancake_order_' + data.id,
-                response.data.id.toString(),
+                (response.data as { id: string | number }).id.toString(),
                 604800000,
               );
+              return response;
             }),
             catchError((error: any) => {
-              console.error('Error:', error?.response?.data?.responseStatus);
+              if (error && typeof error === 'object' && 'response' in error) {
+                console.error(
+                  'Error:',
+                  (error as { response?: { data?: { responseStatus?: any } } })
+                    .response?.data?.responseStatus,
+                );
+              } else {
+                console.error('Error:', error);
+              }
               throw new Error('Failed to update invoice');
             }),
           ),
       );
     } catch (error) {
       this.logger.error(
-        `Error updating invoice for Pancake order ID: ${data.id} with status: ${data.status} with data: ${JSON.stringify(data)} with error: ${error.message}`,
+        `Error updating invoice for Pancake order ID: ${data.id} with status: ${data.status} with data: ${JSON.stringify(data)} with error: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
       );
-    } finally {
-      return true;
     }
   }
 
@@ -339,7 +371,7 @@ export class KiotvietService {
           .pipe(
             catchError((error: any) => {
               this.logger.error(
-                `Error deleting invoice with ID: ${invoiceId} with error: ${error.message}`,
+                `Error deleting invoice with ID: ${invoiceId} with error: ${error instanceof Error ? error.message : String(error)}`,
               );
               throw new Error('Failed to delete invoice');
             }),
@@ -348,10 +380,10 @@ export class KiotvietService {
       this.logger.log(`Deleted invoice with ID: ${invoiceId}`);
     } catch (error) {
       this.logger.error(
-        `Error deleting invoice with ID: ${invoiceId} with error: ${error.message}`,
+        `Error deleting invoice with ID: ${invoiceId} with error: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
       );
-    } finally {
-      return true;
     }
   }
 
@@ -380,13 +412,11 @@ export class KiotvietService {
         },
       )
       .pipe(
-        tap((response) => {
+        map(async (response) => {
           this.logger.log('Access token fetched successfully');
           const data = response.data as { access_token: string };
           const accessToken = data.access_token;
-          this.cacheManager.set(access_token_cache_key, accessToken);
-        }),
-        map((response) => {
+          await this.cacheManager.set(access_token_cache_key, accessToken);
           return response.data as Record<string, unknown>;
         }),
         catchError((error: any) => {

@@ -16,6 +16,8 @@ export class PancakeService {
     | 'total_price'
     | 'partner'
     | 'shipping_address'
+    | 'creator'
+    | 'page_id'
   > {
     this.logger.log(
       `Preparing data for Pancake order ID: ${order.id} with status: ${order.status}`,
@@ -28,6 +30,8 @@ export class PancakeService {
     const total_price = order.total_price;
     const partner = order.partner;
     const shipping_address = order.shipping_address;
+    const creator = order.creator;
+    const page_id = order.page_id;
 
     this.logger.log(
       `Prepared data for Pancake order ID: ${id} with status: ${status} - with data - ${JSON.stringify(
@@ -39,6 +43,8 @@ export class PancakeService {
           total_price,
           partner,
           shipping_address,
+          creator,
+          page_id,
         },
       )}`,
     );
@@ -51,6 +57,8 @@ export class PancakeService {
       total_price,
       partner,
       shipping_address,
+      creator,
+      page_id,
     };
   }
 }
