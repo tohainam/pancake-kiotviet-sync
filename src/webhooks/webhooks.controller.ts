@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Logger, Post } from '@nestjs/common';
+import { Body, Controller, Logger, Post } from '@nestjs/common';
 import { WebhooksService } from './webhooks.service';
 import { PancakeOrder } from 'src/types';
 
@@ -17,12 +17,6 @@ export class WebhooksController {
     this.logger.log(
       `Processed Pancake order webhook for order ID: ${body.id} with status: ${body.status}`,
     );
-    return true;
-  }
-
-  @Get('/pancake/orders')
-  async Test() {
-    await this.webhooksService.handlePancakeOrdersWebhook({} as PancakeOrder);
     return true;
   }
 }

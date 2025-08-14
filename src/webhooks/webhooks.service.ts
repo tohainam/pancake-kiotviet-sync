@@ -21,13 +21,7 @@ export class WebhooksService {
         `Processing Pancake order webhook for order ID: ${order.id} with status: ${order.status}`,
       );
 
-      // console.log(order);
-
-      // status 0 (mới)
-      // status 6 (đã hủy)
-      // status 7 (đơn bị xóa)
-      // status 9 (Chờ chuyển hàng)
-      if (order.status === 0 || order.status === 9) {
+      if (order.status !== 7) {
         const invoiceId = await this.cacheManager.get<string>(
           'pancake_order_' + order.id,
         );

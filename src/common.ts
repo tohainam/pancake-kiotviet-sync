@@ -21,3 +21,18 @@ export const PAGE_MAP = {
   '742024272324949': '1000033984', //'Ngô Hoàng Nam',
   '717858274742648': '1000033984', //'Ngô Hoàng Nam',
 };
+
+export const STATUS_MAP = {
+  request_received: 1, // Mới - Chờ xử lý
+  out_for_delivery: 2, // Đang giao hàng - Đang giao hàng
+  delivered: 3, // Giao thành công - Giao thành công
+  returning: 4, // Đang hoàn - Đang chuyển hoàn
+  returned: 5, // Đã hoàn - Đã chuyển hoàn
+  canceled: 6, // Đã hủy - Đã hủy
+  picking_up: 7, //  Đang lấy hàng - Đang lấy hàng
+  // '': 8, // Chờ lấy lại
+  picked_up: 9, // Đã lấy hàng
+  // '': 10, // Chờ giao lại
+  waiting_for_return: 11, //  Chờ chuyển hoàn - Chờ chuyển hoàn
+  '': 12, //  - Chờ chuyển hoàn lại.
+};

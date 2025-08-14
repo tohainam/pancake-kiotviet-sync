@@ -152,7 +152,7 @@ export type PancakeOrder = {
       old: any;
     };
     bank_payments?: {
-      new: {};
+      new: any;
       old: any;
     };
     editor_id?: string;
@@ -168,7 +168,7 @@ export type PancakeOrder = {
       old: number;
     };
     surcharges?: {
-      new: {};
+      new: any;
       old: any;
     };
     updated_at: string;
@@ -256,7 +256,16 @@ export type PancakeOrder = {
     paid_at: any;
     partner_id: number;
     partner_name: string;
-    partner_status: string;
+    partner_status:
+      | 'request_received'
+      | 'out_for_delivery'
+      | 'delivered'
+      | 'returning'
+      | 'returned'
+      | 'canceled'
+      | 'picking_up'
+      | 'picked_up'
+      | 'waiting_for_return';
     picked_up_at: string;
     printed_form: string;
     service_partner: {
@@ -337,7 +346,7 @@ export type PancakeOrder = {
   };
   warehouse_id: string;
   assigning_care_id: any;
-  advanced_platform_fee: {};
+  advanced_platform_fee: any;
   payment_purchase_histories: Array<any>;
   is_livestream: boolean;
   total_price: number;

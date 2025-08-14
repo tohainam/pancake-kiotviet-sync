@@ -4,7 +4,7 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Cache } from 'cache-manager';
 import { catchError, delay, firstValueFrom, map, of } from 'rxjs';
-import { PAGE_MAP, USER_FULLNAME_MAP } from 'src/common';
+import { PAGE_MAP, STATUS_MAP, USER_FULLNAME_MAP } from 'src/common';
 import { PancakeOrder } from 'src/types';
 
 const access_token_cache_key = 'kiotviet_access_token';
@@ -27,6 +27,7 @@ export class KiotvietService {
       | 'customer'
       | 'items'
       | 'total_price'
+      | 'shipping_fee'
       | 'partner'
       | 'shipping_address'
       | 'creator'
@@ -72,80 +73,105 @@ export class KiotvietService {
           };
         }),
         deliveryDetail: {
-          // Type: 0,
-          // TypeName: '',
           Status: 1,
           Address: data.shipping_address.address,
           ContactNumber: data.shipping_address.phone_number,
           Receiver: data.shipping_address.full_name,
-          // DeliveryBy: null,
-          // LocationId: 255,
-          // LocationName: 'Hà Nội - Quận Nam Từ Liêm',
-          // WardName: 'Phường Mễ Trì',
-          // CustomerId: null,
-          // CustomerCode: null,
           BranchTakingAddressId: 1000011751,
-          // BranchTakingAddressStr:
-          //   'kiêu kị, Phường Tân Lập, Thành phố Thái Nguyên, Thái Nguyên - +84967287868',
-          // AdministrativeAreaId: null,
-          // WardId: 207,
-          // Weight: 1000,
-          // Height: 2,
-          // Width: 30,
-          // Length: 100,
           AddressInforDelivery: data.shipping_address.address,
-          // IsChangeGBH: false,
-          // PackageType: 0,
-          // Paymenter: 0,
           TotalProductPrice: data.total_price,
           TotalReceiverPay: data.total_price,
-          // UseDefaultPartner: false,
-          // UsingOfBilling: false,
           UsingPriceCod: 1,
-          // ChangeExpectedDelivery: false,
-          // WeightInput: 1000,
-          // LastLocation: 'Hà Nội - Quận Nam Từ Liêm',
-          // LastWard: 'Phường Mễ Trì',
-          // PackageTypeObj: {
-          //   Value: 0,
-          //   Name: 'gram',
-          // },
-          // MaterialType: 'cm',
-          // WidthInput: 30,
-          // HeightInput: 2,
-          // LengthInput: 100,
-          // Price: null,
-          // Comments: null,
-          // ExpectedDelivery: null,
+          Price: data.shipping_fee,
           DeliveryCode: data.partner?.extend_code || '',
-          // PartnerCode: '',
-          // PartnerName: null,
-          // PartnerDelivery: null,
-          // ServiceCodeText: null,
-          // ServiceCode: null,
-          // ServiceAdd: null,
-          // PartnerDeliveryImage: null,
-          // Description: 'Đối soát nhanh, Cho xem, không thử, Người gửi trả phí',
-          // ServiceAddInfor: null,
-          // FeeShip: 0,
-          // SenderPaymentFee: 0,
-          // RecipientPaymentFee: 0,
-          // TotalRecipientPayment: 0,
+          PartnerDeliveryId: 1000002676, // J&T
         },
         description: `Đơn hàng tự động tạo từ đơn Pancake with ID ${data.id}.${USER_FULLNAME_MAP[data.creator.fb_id] ? ` Tạo bởi ${USER_FULLNAME_MAP[data.creator.fb_id]}` : ''}`,
       };
-      // console.log(invoice);
 
       const RETAILER_NAME =
         this.configService.getOrThrow<string>('RETAILER_NAME');
       const INVOICE_ENDPOINT =
         this.configService.getOrThrow<string>('INVOICE_ENDPOINT');
+      const CUSTOMER_ENDPOINT =
+        this.configService.getOrThrow<string>('CUSTOMER_ENDPOINT');
 
       await firstValueFrom(await this.checkAccessTokenValid());
 
       const accessToken = await this.cacheManager.get<string>(
         access_token_cache_key,
       );
+
+      const responseCustomer: {
+        data: { total: number; data: { id: number }[] };
+      } = await firstValueFrom(
+        this.httpService
+          .get(
+            `${CUSTOMER_ENDPOINT}?contactNumber=${data.customer?.phone_numbers?.[0]}`,
+            {
+              headers: {
+                Retailer: RETAILER_NAME,
+                Authorization: `Bearer ${accessToken || ''}`,
+              },
+            },
+          )
+          .pipe(
+            catchError((error: any) => {
+              this.logger.error(error);
+              throw new Error('Failed to fetch customer data');
+            }),
+          ),
+      );
+
+      let customerId: number;
+      if (responseCustomer.data?.total === 0) {
+        const response: { data: { data: { id: number } } } =
+          await firstValueFrom(
+            this.httpService
+              .post(
+                CUSTOMER_ENDPOINT,
+                {
+                  name: data.customer?.name,
+                  contactNumber: data.customer?.phone_numbers?.[0],
+                  branchId: 1000011751,
+                },
+                {
+                  headers: {
+                    Retailer: RETAILER_NAME,
+                    Authorization: `Bearer ${accessToken || ''}`,
+                  },
+                },
+              )
+              .pipe(
+                catchError((error: any) => {
+                  if (
+                    error &&
+                    typeof error === 'object' &&
+                    'response' in error
+                  ) {
+                    this.logger.error(
+                      'Error:',
+                      (
+                        error as {
+                          response?: { data?: { responseStatus?: any } };
+                        }
+                      ).response?.data?.responseStatus,
+                    );
+                  } else {
+                    this.logger.error('Error:', error);
+                  }
+                  throw new Error('Failed to create customer');
+                }),
+              ),
+          );
+        customerId = response.data.data.id;
+      } else {
+        customerId = responseCustomer.data.data?.[0]?.id;
+      }
+
+      if (customerId) {
+        invoice.customerId = customerId;
+      }
 
       await firstValueFrom(
         this.httpService
@@ -166,13 +192,13 @@ export class KiotvietService {
             }),
             catchError((error: any) => {
               if (error && typeof error === 'object' && 'response' in error) {
-                console.error(
+                this.logger.error(
                   'Error:',
                   (error as { response?: { data?: { responseStatus?: any } } })
                     .response?.data?.responseStatus,
                 );
               } else {
-                console.error('Error:', error);
+                this.logger.error('Error:', error);
               }
               throw new Error('Failed to create invoice');
             }),
@@ -200,6 +226,7 @@ export class KiotvietService {
       | 'customer'
       | 'items'
       | 'total_price'
+      | 'shipping_fee'
       | 'partner'
       | 'shipping_address'
       // | 'creator'
@@ -214,7 +241,18 @@ export class KiotvietService {
       const invoice: {
         soldById: number;
         invoiceDetails: any[];
-        deliveryDetail: any;
+        deliveryDetail: {
+          Status?: number;
+          Address: string;
+          ContactNumber: string;
+          Receiver: string;
+          AddressInforDelivery: string;
+          TotalProductPrice: number;
+          TotalReceiverPay: number;
+          Price: number;
+          DeliveryCode: string;
+          PartnerDeliveryId: number;
+        };
       } = {
         soldById:
           data?.page_id && PAGE_MAP[data.page_id]
@@ -228,67 +266,24 @@ export class KiotvietService {
           };
         }),
         deliveryDetail: {
-          // Type: 0,
-          // TypeName: '',
           Address: data.shipping_address.address,
           ContactNumber: data.shipping_address.phone_number,
           Receiver: data.shipping_address.full_name,
-          // DeliveryBy: null,
-          // LocationId: 255,
-          // LocationName: 'Hà Nội - Quận Nam Từ Liêm',
-          // WardName: 'Phường Mễ Trì',
-          // CustomerId: null,
-          // CustomerCode: null,
-          // BranchTakingAddressId: 1000011751,
-          // BranchTakingAddressStr:
-          //   'kiêu kị, Phường Tân Lập, Thành phố Thái Nguyên, Thái Nguyên - +84967287868',
-          // AdministrativeAreaId: null,
-          // WardId: 207,
-          // Weight: 1000,
-          // Height: 2,
-          // Width: 30,
-          // Length: 100,
           AddressInforDelivery: data.shipping_address.address,
-          // IsChangeGBH: false,
-          // PackageType: 0,
-          // Paymenter: 0,
           TotalProductPrice: data.total_price,
           TotalReceiverPay: data.total_price,
-          // UseDefaultPartner: false,
-          // UsingOfBilling: false,
-          // UsingPriceCod: 1,
-          // ChangeExpectedDelivery: false,
-          // WeightInput: 1000,
-          // LastLocation: 'Hà Nội - Quận Nam Từ Liêm',
-          // LastWard: 'Phường Mễ Trì',
-          // PackageTypeObj: {
-          //   Value: 0,
-          //   Name: 'gram',
-          // },
-          // MaterialType: 'cm',
-          // WidthInput: 30,
-          // HeightInput: 2,
-          // LengthInput: 100,
-          // Price: null,
-          // Comments: null,
-          // ExpectedDelivery: null,
+          Price: data.shipping_fee,
           DeliveryCode: data.partner?.extend_code || '',
-          // PartnerCode: '',
-          // PartnerName: null,
-          // PartnerDelivery: null,
-          // ServiceCodeText: null,
-          // ServiceCode: null,
-          // ServiceAdd: null,
-          // PartnerDeliveryImage: null,
-          // Description: 'Đối soát nhanh, Cho xem, không thử, Người gửi trả phí',
-          // ServiceAddInfor: null,
-          // FeeShip: 0,
-          // SenderPaymentFee: 0,
-          // RecipientPaymentFee: 0,
-          // TotalRecipientPayment: 0,
+          PartnerDeliveryId: 1000002676,
         },
-        // description: `Đơn hàng tự động tạo từ đơn Pancake with ID ${data.id}`,
       };
+
+      if (
+        data.partner?.partner_status &&
+        STATUS_MAP[data.partner?.partner_status]
+      ) {
+        invoice.deliveryDetail.Status = STATUS_MAP[data.partner.partner_status];
+      }
 
       const RETAILER_NAME =
         this.configService.getOrThrow<string>('RETAILER_NAME');
