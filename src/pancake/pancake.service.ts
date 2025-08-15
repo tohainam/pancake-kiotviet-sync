@@ -14,7 +14,7 @@ export class PancakeService {
     | 'customer'
     | 'items'
     | 'total_price'
-    | 'shipping_fee'
+    | 'partner_fee'
     | 'partner'
     | 'shipping_address'
     | 'creator'
@@ -29,7 +29,7 @@ export class PancakeService {
     const customer = order.customer;
     const items = order.items;
     const total_price = order.total_price;
-    const shipping_fee = order.shipping_fee || 0;
+    const partner_fee = order.partner_fee || 0;
     const partner = order.partner;
     const shipping_address = order.shipping_address;
     const creator = order.creator;
@@ -43,7 +43,7 @@ export class PancakeService {
           customer,
           items,
           total_price,
-          shipping_fee,
+          partner_fee,
           partner,
           shipping_address,
           creator,
@@ -58,7 +58,7 @@ export class PancakeService {
       customer,
       items,
       total_price,
-      shipping_fee,
+      partner_fee,
       partner,
       shipping_address,
       creator,

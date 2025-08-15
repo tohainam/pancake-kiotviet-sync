@@ -1,10 +1,9 @@
 import { HttpService } from '@nestjs/axios';
-import { CACHE_MANAGER } from '@nestjs/cache-manager';
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Cache } from 'cache-manager';
 import { catchError, delay, firstValueFrom, map, of } from 'rxjs';
 import { PAGE_MAP, STATUS_MAP, USER_FULLNAME_MAP } from 'src/common';
+import { StorageService } from 'src/storage/storage.service';
 import { PancakeOrder } from 'src/types';
 
 const access_token_cache_key = 'kiotviet_access_token';
@@ -14,7 +13,7 @@ export class KiotvietService {
   private readonly logger = new Logger(KiotvietService.name);
 
   constructor(
-    @Inject(CACHE_MANAGER) private cacheManager: Cache,
+    private readonly storageService: StorageService,
     private readonly httpService: HttpService,
     private readonly configService: ConfigService,
   ) {}
@@ -27,7 +26,7 @@ export class KiotvietService {
       | 'customer'
       | 'items'
       | 'total_price'
-      | 'shipping_fee'
+      | 'partner_fee'
       | 'partner'
       | 'shipping_address'
       | 'creator'
@@ -82,7 +81,7 @@ export class KiotvietService {
           TotalProductPrice: data.total_price,
           TotalReceiverPay: data.total_price,
           UsingPriceCod: 1,
-          Price: data.shipping_fee,
+          Price: data.partner_fee,
           DeliveryCode: data.partner?.extend_code || '',
           PartnerDeliveryId: 1000002676, // J&T
         },
@@ -98,7 +97,7 @@ export class KiotvietService {
 
       await firstValueFrom(await this.checkAccessTokenValid());
 
-      const accessToken = await this.cacheManager.get<string>(
+      const accessToken = await this.storageService.get<string>(
         access_token_cache_key,
       );
 
@@ -183,10 +182,10 @@ export class KiotvietService {
           })
           .pipe(
             map(async (response) => {
-              await this.cacheManager.set(
+              await this.storageService.set(
                 'pancake_order_' + data.id,
                 (response.data as { id: string | number }).id.toString(),
-                604800000,
+                2_592_000_000,
               );
               return response;
             }),
@@ -226,7 +225,7 @@ export class KiotvietService {
       | 'customer'
       | 'items'
       | 'total_price'
-      | 'shipping_fee'
+      | 'partner_fee'
       | 'partner'
       | 'shipping_address'
       // | 'creator'
@@ -272,7 +271,7 @@ export class KiotvietService {
           AddressInforDelivery: data.shipping_address.address,
           TotalProductPrice: data.total_price,
           TotalReceiverPay: data.total_price,
-          Price: data.shipping_fee,
+          Price: data.partner_fee,
           DeliveryCode: data.partner?.extend_code || '',
           PartnerDeliveryId: 1000002676,
         },
@@ -292,7 +291,7 @@ export class KiotvietService {
 
       await firstValueFrom(await this.checkAccessTokenValid());
 
-      const accessToken = await this.cacheManager.get<string>(
+      const accessToken = await this.storageService.get<string>(
         access_token_cache_key,
       );
 
@@ -306,10 +305,10 @@ export class KiotvietService {
           })
           .pipe(
             map(async (response) => {
-              await this.cacheManager.set(
+              await this.storageService.set(
                 'pancake_order_' + data.id,
                 (response.data as { id: string | number }).id.toString(),
-                604800000,
+                2_592_000_000,
               );
               return response;
             }),
@@ -347,7 +346,7 @@ export class KiotvietService {
 
       await firstValueFrom(await this.checkAccessTokenValid());
 
-      const accessToken = await this.cacheManager.get<string>(
+      const accessToken = await this.storageService.get<string>(
         access_token_cache_key,
       );
 
@@ -411,7 +410,7 @@ export class KiotvietService {
           this.logger.log('Access token fetched successfully');
           const data = response.data as { access_token: string };
           const accessToken = data.access_token;
-          await this.cacheManager.set(access_token_cache_key, accessToken);
+          await this.storageService.set(access_token_cache_key, accessToken);
           return response.data as Record<string, unknown>;
         }),
         catchError((error: any) => {
@@ -435,7 +434,7 @@ export class KiotvietService {
     const RETAILER_NAME =
       this.configService.getOrThrow<string>('RETAILER_NAME');
 
-    const accessToken = await this.cacheManager.get<string>(
+    const accessToken = await this.storageService.get<string>(
       access_token_cache_key,
     );
 

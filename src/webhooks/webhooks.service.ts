@@ -1,8 +1,7 @@
-import { CACHE_MANAGER } from '@nestjs/cache-manager';
-import { Inject, Injectable, Logger } from '@nestjs/common';
-import { Cache } from 'cache-manager';
+import { Injectable, Logger } from '@nestjs/common';
 import { KiotvietService } from 'src/kiotviet/kiotviet.service';
 import { PancakeService } from 'src/pancake/pancake.service';
+import { StorageService } from 'src/storage/storage.service';
 import { PancakeOrder } from 'src/types';
 
 @Injectable()
@@ -10,7 +9,7 @@ export class WebhooksService {
   private readonly logger = new Logger(WebhooksService.name);
 
   constructor(
-    @Inject(CACHE_MANAGER) private cacheManager: Cache,
+    private readonly storageService: StorageService,
     private readonly pancakeService: PancakeService,
     private readonly kiotvietService: KiotvietService,
   ) {}
@@ -22,7 +21,7 @@ export class WebhooksService {
       );
 
       if (order.status !== 7) {
-        const invoiceId = await this.cacheManager.get<string>(
+        const invoiceId = await this.storageService.get<string>(
           'pancake_order_' + order.id,
         );
 
@@ -38,14 +37,14 @@ export class WebhooksService {
       }
 
       if (order.status === 7) {
-        const invoiceId = await this.cacheManager.get<string>(
+        const invoiceId = await this.storageService.get<string>(
           'pancake_order_' + order.id,
         );
         if (invoiceId) {
           await this.kiotvietService.deleteInvoice(invoiceId);
-          await this.cacheManager.del('pancake_order_' + order.id);
+          await this.storageService.del('pancake_order_' + order.id);
           this.logger.log(
-            `Order ID: ${order.id} has been deleted, removing from cache and KiotViet.`,
+            `Order ID: ${order.id} has been deleted, removing from storage and KiotViet.`,
           );
         }
       }
