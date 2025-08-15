@@ -31,7 +31,8 @@ export const STATUS_MAP = {
   canceled: 6, // Đã hủy - Đã hủy
   picking_up: 7, //  Đang lấy hàng - Đang lấy hàng
   // '': 8, // Chờ lấy lại
-  picked_up: 9, // Đã lấy hàng
+  picked_up: 9, // Đã lấy hàng - Đã lấy hàng
+  on_the_way: 9, // Đã gửi hàng - Đã lấy hàng
   // '': 10, // Chờ giao lại
   waiting_for_return: 11, //  Chờ chuyển hoàn - Chờ chuyển hoàn
   '': 12, //  - Chờ chuyển hoàn lại.
