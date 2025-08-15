@@ -29,7 +29,7 @@ export class WebhooksService {
         const orderData = this.pancakeService.prepareData(order);
 
         if (!invoiceId) {
-          if (order.status === 0 || order.status === 9) {
+          if (order.status === 0) {
             await this.kiotvietService.createInvoice(orderData);
           }
         } else {
