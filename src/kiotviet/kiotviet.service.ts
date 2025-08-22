@@ -34,9 +34,9 @@ export class KiotvietService {
     >,
   ) {
     try {
-      this.logger.log(
-        `Creating invoice for Pancake order ID: ${data.id} with status: ${data.status} with data: ${JSON.stringify(data)}`,
-      );
+      // this.logger.log(
+      //   `Creating invoice for Pancake order ID: ${data.id} with status: ${data.status} with data: ${JSON.stringify(data)}`,
+      // );
 
       const invoice: {
         branchId: number;
@@ -204,9 +204,9 @@ export class KiotvietService {
           ),
       );
 
-      this.logger.log(
-        `Created invoice for Pancake order ID: ${data.id} with status: ${data.status} with data: ${JSON.stringify(data)}`,
-      );
+      // this.logger.log(
+      //   `Created invoice for Pancake order ID: ${data.id} with status: ${data.status} with data: ${JSON.stringify(data)}`,
+      // );
     } catch (error: unknown) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
@@ -337,7 +337,7 @@ export class KiotvietService {
 
   async deleteInvoice(invoiceId: string) {
     try {
-      this.logger.log(`Deleting invoice with ID: ${invoiceId}`);
+      // this.logger.log(`Deleting invoice with ID: ${invoiceId}`);
 
       const INVOICE_ENDPOINT =
         this.configService.getOrThrow<string>('INVOICE_ENDPOINT');
@@ -371,7 +371,7 @@ export class KiotvietService {
             }),
           ),
       );
-      this.logger.log(`Deleted invoice with ID: ${invoiceId}`);
+      // this.logger.log(`Deleted invoice with ID: ${invoiceId}`);
     } catch (error) {
       this.logger.error(
         `Error deleting invoice with ID: ${invoiceId} with error: ${
@@ -382,7 +382,7 @@ export class KiotvietService {
   }
 
   getAccessToken() {
-    this.logger.log('Fetching Kiotviet access token...');
+    // this.logger.log('Fetching Kiotviet access token...');
     const TOKEN_ENDPOINT =
       this.configService.getOrThrow<string>('TOKEN_ENDPOINT');
     const CLIENT_ID = this.configService.getOrThrow<string>('CLIENT_ID');
@@ -407,7 +407,7 @@ export class KiotvietService {
       )
       .pipe(
         map(async (response) => {
-          this.logger.log('Access token fetched successfully');
+          // this.logger.log('Access token fetched successfully');
           const data = response.data as { access_token: string };
           const accessToken = data.access_token;
           await this.storageService.set(access_token_cache_key, accessToken);
@@ -428,7 +428,7 @@ export class KiotvietService {
   }
 
   async checkAccessTokenValid() {
-    this.logger.log('Checking Kiotviet access token validity...');
+    // this.logger.log('Checking Kiotviet access token validity...');
     const WEBHOOK_ENDPOINT =
       this.configService.getOrThrow<string>('WEBHOOK_ENDPOINT');
     const RETAILER_NAME =
@@ -454,7 +454,7 @@ export class KiotvietService {
             typeof (error as { status?: unknown }).status === 'number' &&
             (error as { status: number }).status === 401
           ) {
-            this.logger.log('Access token expired, refreshing...');
+            // this.logger.log('Access token expired, refreshing...');
             return this.getAccessToken().pipe(
               delay(2000),
               map(() => null),

@@ -20,9 +20,9 @@ export class PancakeService {
     | 'creator'
     | 'page_id'
   > {
-    this.logger.log(
-      `Preparing data for Pancake order ID: ${order.id} with status: ${order.status}`,
-    );
+    // this.logger.log(
+    //   `Preparing data for Pancake order ID: ${order.id} with status: ${order.status}`,
+    // );
 
     const id = order.id;
     const status = order.status;
@@ -35,22 +35,22 @@ export class PancakeService {
     const creator = order.creator;
     const page_id = order.page_id;
 
-    this.logger.log(
-      `Prepared data for Pancake order ID: ${id} with status: ${status} - with data - ${JSON.stringify(
-        {
-          id,
-          status,
-          customer,
-          items,
-          total_price,
-          partner_fee,
-          partner,
-          shipping_address,
-          creator,
-          page_id,
-        },
-      )}`,
-    );
+    // this.logger.log(
+    //   `Prepared data for Pancake order ID: ${id} with status: ${status} - with data - ${JSON.stringify(
+    //     {
+    //       id,
+    //       status,
+    //       customer,
+    //       items,
+    //       total_price,
+    //       partner_fee,
+    //       partner,
+    //       shipping_address,
+    //       creator,
+    //       page_id,
+    //     },
+    //   )}`,
+    // );
 
     return {
       id,

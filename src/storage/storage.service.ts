@@ -23,7 +23,7 @@ export class StorageService {
       await fs.access(this.storagePath);
     } catch {
       await fs.mkdir(this.storagePath, { recursive: true });
-      this.logger.log(`Created storage directory: ${this.storagePath}`);
+      // this.logger.log(`Created storage directory: ${this.storagePath}`);
     }
   }
 
@@ -105,7 +105,7 @@ export class StorageService {
         .map((file) => fs.unlink(join(this.storagePath, file)));
 
       await Promise.all(deletePromises);
-      this.logger.log('Cleared all storage files');
+      // this.logger.log('Cleared all storage files');
     } catch (error) {
       this.logger.error('Error clearing storage:', error);
       throw error;
@@ -134,7 +134,7 @@ export class StorageService {
       });
 
       await Promise.all(cleanupPromises);
-      this.logger.log('Cleanup completed');
+      // this.logger.log('Cleanup completed');
     } catch (error) {
       this.logger.error('Error during cleanup:', error);
     }
