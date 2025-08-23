@@ -234,7 +234,7 @@ export class KiotvietService {
   ) {
     try {
       this.logger.log(
-        `Updating invoice for Pancake order ID: ${data.id} with status: ${data.status} with data: ${JSON.stringify(data)}`,
+        `Updating invoice for Pancake order ID: ${data.id} with status: ${data.status}`,
       );
 
       const invoice: {

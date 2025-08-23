@@ -1,19 +1,30 @@
 import { Body, Controller, Logger, Post } from '@nestjs/common';
-import { WebhooksService } from './webhooks.service';
 import { PancakeOrder } from 'src/types';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
 
 @Controller('webhooks')
 export class WebhooksController {
   private readonly logger = new Logger(WebhooksController.name);
 
-  constructor(private readonly webhooksService: WebhooksService) {}
+  constructor(
+    @InjectQueue('pancake-webhook')
+    private readonly pancakeWebhookQueue: Queue<PancakeOrder>,
+  ) {}
 
   @Post('/pancake/orders')
   async handlePancakeOrdersWebhook(@Body() body: PancakeOrder) {
     this.logger.log(
       `Received Pancake order webhook for order ID: ${body.id} with status: ${body.status}`,
     );
-    await this.webhooksService.handlePancakeOrdersWebhook(body);
+
+    const response = await this.pancakeWebhookQueue.add('process', body, {
+      removeOnComplete: true,
+      removeOnFail: true,
+    });
+
+    this.logger.log('Job added to queue:', response.id);
+
     this.logger.log(
       `Processed Pancake order webhook for order ID: ${body.id} with status: ${body.status}`,
     );

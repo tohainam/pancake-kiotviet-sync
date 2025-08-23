@@ -1,0 +1,28 @@
+services:
+  pancake-kiotviet-sync.redis:
+    image: redis:8.0.0
+    container_name: pancake-kiotviet-sync.redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - pancake-kiotviet-sync_redis:/data
+    networks:
+      - pancake-kiotviet-sync
+
+  pancake-kiotviet-sync.redis-insight:
+    image: redis/redisinsight:latest
+    container_name: pancake-kiotviet-sync.redis-insight
+    ports:
+      - "5540:5540"
+    volumes:
+      - pancake-kiotviet-sync_redis_insight:/data
+    networks:
+      - pancake-kiotviet-sync
+
+
+volumes:
+  pancake-kiotviet-sync_redis:
+  pancake-kiotviet-sync_redis_insight:
+
+networks:
+  pancake-kiotviet-sync:
