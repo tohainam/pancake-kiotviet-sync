@@ -122,48 +122,51 @@ export class KiotvietService {
           ),
       );
 
-      let customerId: number;
+      let customerId: number | null = null;
+
       if (responseCustomer.data?.total === 0) {
-        const response: { data: { data: { id: number } } } =
-          await firstValueFrom(
-            this.httpService
-              .post(
-                CUSTOMER_ENDPOINT,
-                {
-                  name: data.customer?.name,
-                  contactNumber: data.customer?.phone_numbers?.[0],
-                  branchId: 1000011751,
-                },
-                {
-                  headers: {
-                    Retailer: RETAILER_NAME,
-                    Authorization: `Bearer ${accessToken || ''}`,
+        if (data.customer?.name && data.customer?.phone_numbers?.[0]) {
+          const response: { data: { data: { id: number } } } =
+            await firstValueFrom(
+              this.httpService
+                .post(
+                  CUSTOMER_ENDPOINT,
+                  {
+                    name: data.customer?.name,
+                    contactNumber: data.customer?.phone_numbers?.[0],
+                    branchId: 1000011751,
                   },
-                },
-              )
-              .pipe(
-                catchError((error: any) => {
-                  if (
-                    error &&
-                    typeof error === 'object' &&
-                    'response' in error
-                  ) {
-                    this.logger.error(
-                      'Error:',
-                      (
-                        error as {
-                          response?: { data?: { responseStatus?: any } };
-                        }
-                      ).response?.data?.responseStatus,
-                    );
-                  } else {
-                    this.logger.error('Error:', error);
-                  }
-                  throw new Error('Failed to create customer');
-                }),
-              ),
-          );
-        customerId = response.data.data.id;
+                  {
+                    headers: {
+                      Retailer: RETAILER_NAME,
+                      Authorization: `Bearer ${accessToken || ''}`,
+                    },
+                  },
+                )
+                .pipe(
+                  catchError((error: any) => {
+                    if (
+                      error &&
+                      typeof error === 'object' &&
+                      'response' in error
+                    ) {
+                      this.logger.error(
+                        'Error:',
+                        (
+                          error as {
+                            response?: { data?: { responseStatus?: any } };
+                          }
+                        ).response?.data?.responseStatus,
+                      );
+                    } else {
+                      this.logger.error('Error:', error);
+                    }
+                    throw new Error('Failed to create customer');
+                  }),
+                ),
+            );
+          customerId = response.data.data.id;
+        }
       } else {
         customerId = responseCustomer.data.data?.[0]?.id;
       }
