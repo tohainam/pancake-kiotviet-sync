@@ -16,13 +16,17 @@ export class WebhooksService {
 
   async handlePancakeOrdersWebhook(order: PancakeOrder) {
     try {
-      // this.logger.log(
-      //   `Processing Pancake order webhook for order ID: ${order.id} with status: ${order.status}`,
-      // );
+      this.logger.log(
+        `[START] handlePancakeOrdersWebhook for order ID: ${order.id} with status: ${order.status}`,
+      );
 
       if (order.status !== 7) {
         const invoiceId = await this.storageService.get<string>(
           'pancake_order_' + order.id,
+        );
+
+        this.logger.log(
+          `[PROCESSING] handlePancakeOrdersWebhook for order ID: ${order.id} with status: ${order.status} with invoiceId: ${invoiceId}`,
         );
 
         const orderData = this.pancakeService.prepareData(order);
@@ -40,6 +44,10 @@ export class WebhooksService {
         const invoiceId = await this.storageService.get<string>(
           'pancake_order_' + order.id,
         );
+        this.logger.log(
+          `[PROCESSING] handlePancakeOrdersWebhook for order ID: ${order.id} with status: ${order.status} with invoiceId: ${invoiceId}`,
+        );
+
         if (invoiceId) {
           await this.kiotvietService.deleteInvoice(invoiceId);
           await this.storageService.del('pancake_order_' + order.id);
@@ -49,12 +57,12 @@ export class WebhooksService {
         }
       }
 
-      // this.logger.log(
-      //   `Successfully processing Pancake order ID: ${order.id} with status: ${order.status}`,
-      // );
+      this.logger.log(
+        `[END] handlePancakeOrdersWebhook for order ID: ${order.id} with status: ${order.status}`,
+      );
     } catch {
       this.logger.error(
-        `Error processing Pancake order ID ${order.id} with status: ${order.status} webhook`,
+        `[END] handlePancakeOrdersWebhook for order ID ${order.id} with status: ${order.status} webhook`,
       );
     }
   }
