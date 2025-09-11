@@ -251,6 +251,7 @@ export class KiotvietService {
           AddressInforDelivery: string;
           TotalProductPrice: number;
           TotalReceiverPay: number;
+          UsingPriceCod: number;
           Price: number;
           DeliveryCode: string;
           PartnerDeliveryId: number;
@@ -274,6 +275,7 @@ export class KiotvietService {
           AddressInforDelivery: data.shipping_address.address,
           TotalProductPrice: data.total_price,
           TotalReceiverPay: data.total_price,
+          UsingPriceCod: 1,
           Price: data.partner_fee,
           DeliveryCode: data.partner?.extend_code || '',
           PartnerDeliveryId: 1000002676,
