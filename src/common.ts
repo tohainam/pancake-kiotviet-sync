@@ -3,6 +3,7 @@ export const USER_MAP = {
   '122139384938469583': '1000033954', //'Trần Thị Ngọc Hiên',
   '122229301970009916': '1000033951', //'Âu Thị Hồng Hạnh',
   '122099831474851971': '1000033993', //'Đồng thị Quỳnh Trang',
+  '356899340356397': '1000048930',
 };
 
 export const USER_FULLNAME_MAP = {
@@ -10,6 +11,7 @@ export const USER_FULLNAME_MAP = {
   '122139384938469583': 'Trần Thị Ngọc Hiên',
   '122229301970009916': 'Âu Thị Hồng Hạnh',
   '122099831474851971': 'Đồng thị Quỳnh Trang',
+  '356899340356397': 'Nguyễn Thị Hồng Nhung',
 };
 
 export const PAGE_MAP = {
